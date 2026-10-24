@@ -1,0 +1,23 @@
+name: Publish Docker Image
+run-name: ${{ github.actor }} pushing to Dockerhub
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  Publish-Dockerhub:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.13', '3.14']
+        poetry: ['2.2.1']
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "${{ secrets.DOCKERHUB_PAT }}" | docker login -u ${{ vars.DOCKERHUB_USER }} --password-stdin
+      - run: |
+          TAG="${{ vars.DOCKERHUB_REPO_NAME }}:${{ matrix.python }}-poetry${{ matrix.poetry }}"
+          docker build --pull --no-cache \
+            --build-arg PYTHON_VERSION="${{ matrix.python }}" \
+            --build-arg POETRY_VERSION="${{ matrix.poetry }}" \
+            -t "$TAG" .
+          docker push "$TAG"
